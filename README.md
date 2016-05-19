@@ -3,7 +3,9 @@ gotogether
 
 To run go code concurrently.
 
-```golang
+[![CircleCI](https://circleci.com/gh/caiguanhao/gotogether.svg?style=svg)](https://circleci.com/gh/caiguanhao/gotogether)
+
+```go
 gotogether.Parallel{
 	func() {
 		time.Sleep(100 * time.Millisecond)
@@ -31,7 +33,7 @@ gotogether.Queue{
 }.Run()
 ```
 
-See docs for usage and examples.
+See [docs](https://godoc.org/github.com/caiguanhao/gotogether) for usage and examples.
 
 LICENSE: MIT
 
