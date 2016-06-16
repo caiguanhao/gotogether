@@ -46,6 +46,26 @@ func Example_enumerable() {
 	// All OK
 }
 
+func Example_enumerableQueue() {
+	gotogether.Enumerable([]interface{}{100, 200, 101, 201, 102, 202}).QueueWithIndex(func(item interface{}, i int) {
+		seconds := item.(int)
+		duration := time.Millisecond * time.Duration(seconds)
+		time.Sleep(duration)
+		fmt.Println(item, duration, i, "OK")
+	}).WithConcurrency(2).Run()
+
+	fmt.Println("All OK")
+
+	// Output:
+	// 100 100ms 0 OK
+	// 200 200ms 1 OK
+	// 101 101ms 2 OK
+	// 102 102ms 4 OK
+	// 201 201ms 3 OK
+	// 202 202ms 5 OK
+	// All OK
+}
+
 func Example_enumerableWithIndex() {
 	var items []interface{}
 

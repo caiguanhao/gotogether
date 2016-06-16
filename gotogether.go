@@ -54,6 +54,34 @@ func (e Enumerable) ParallelWithIndex(f func(item interface{}, i int)) (p Parall
 	return
 }
 
+// Convert Enumerable to Queue
+func (e Enumerable) Queue(f func(item interface{})) (q Queue) {
+	q.AddJob = func(jobs *chan interface{}, _ *chan interface{}, _ *chan error) {
+		for _, item := range e {
+			*jobs <- item
+		}
+	}
+	q.DoJob = func(job *interface{}) (_ interface{}, _ error) {
+		f(*job)
+		return
+	}
+	return
+}
+
+func (e Enumerable) QueueWithIndex(f func(item interface{}, i int)) (q Queue) {
+	q.AddJob = func(jobs *chan interface{}, _ *chan interface{}, _ *chan error) {
+		for i, item := range e {
+			*jobs <- []interface{}{item, i}
+		}
+	}
+	q.DoJob = func(job *interface{}) (_ interface{}, _ error) {
+		jobInfo := (*job).([]interface{})
+		f(jobInfo[0], jobInfo[1].(int))
+		return
+	}
+	return
+}
+
 // Array of functions to run concurrently.
 type Parallel []func()
 
@@ -159,4 +187,10 @@ func (q Queue) Run() {
 			}
 		},
 	}.Run()
+}
+
+// Set concurrency
+func (q Queue) WithConcurrency(concurrency int) Queue {
+	q.Concurrency = concurrency
+	return q
 }
