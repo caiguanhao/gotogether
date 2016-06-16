@@ -2,7 +2,6 @@ package gotogether_test
 
 import (
 	"crypto/md5"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -134,47 +133,33 @@ func Example_queue() {
 
 	gotogether.Queue{
 		Concurrency: 1, // set to 1 for constant output of this test; it can can be any integer great than 0
-		AddJob: func(jobs *chan interface{}, done *chan interface{}, errs *chan error) {
-			*errs <- filepath.Walk(TEST_FIXTURES_DIR, func(path string, info os.FileInfo, err error) error {
+		AddJob: func(jobs *chan interface{}) {
+			err := filepath.Walk(TEST_FIXTURES_DIR, func(path string, info os.FileInfo, err error) error {
 				if err != nil {
 					return err
 				}
 				if !info.Mode().IsRegular() {
 					return nil
 				}
-				select {
-				case *jobs <- []interface{}{path, info.Size()}:
-				case <-*done:
-					return errors.New("walk canceled")
-				}
+				*jobs <- []interface{}{path, info.Size()}
 				return nil
 			})
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				totalErrors++
+			}
 		},
-		OnAddJobError: func(err *error) {
-			fmt.Fprintln(os.Stderr, *err)
-			totalErrors++
-		},
-		DoJob: func(job *interface{}) (ret interface{}, err error) {
+		DoJob: func(job *interface{}) {
 			jobInfo := (*job).([]interface{})
 			path, size := jobInfo[0], jobInfo[1]
 
-			var data []byte
-			data, err = ioutil.ReadFile(path.(string))
-			if err != nil {
-				return
+			data, err := ioutil.ReadFile(path.(string))
+			if err == nil {
+				fmt.Printf("Result:  %s (%d bytes) = %X\n", path, size, md5.Sum(data))
+			} else {
+				fmt.Fprintln(os.Stderr, err)
+				totalErrors++
 			}
-
-			ret = []interface{}{path, fmt.Sprintf("%X", md5.Sum(data)), size}
-			return
-		},
-		OnJobError: func(err *error) {
-			fmt.Fprintln(os.Stderr, *err)
-			totalErrors++
-		},
-		OnJobSuccess: func(ret *interface{}) {
-			rets := (*ret).([]interface{})
-			path, md5, size := rets[0].(string), rets[1].(string), rets[2].(int64)
-			fmt.Printf("Result:  %s (%d bytes) = %s\n", path, size, md5)
 		},
 	}.Run()
 
