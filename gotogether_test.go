@@ -6,10 +6,27 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
+	"testing"
 	"time"
 
 	"github.com/caiguanhao/gotogether"
 )
+
+func TestEnumerable_Filter(t *testing.T) {
+	actual := gotogether.Enumerable([]interface{}{"a", 0}).Filter(func(item interface{}) bool {
+		switch item.(type) {
+		case string:
+			return true
+		default:
+			return false
+		}
+	})
+	expected := gotogether.Enumerable([]interface{}{"a"})
+	if !reflect.DeepEqual(actual, expected) {
+		t.Errorf("%s should be %s", actual, expected)
+	}
+}
 
 func Example_enumerable() {
 	var items []interface{}
